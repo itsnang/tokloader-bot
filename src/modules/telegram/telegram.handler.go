@@ -3,6 +3,7 @@ package telegram
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -43,8 +44,10 @@ func (h *Handler) OnMessage(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	}
 
-	wait, _ := h.sender.Send(tgbotapi.NewMessage(msg.Chat.ID, "Processing... ⏳"))
-	defer h.sender.Request(tgbotapi.NewDeleteMessage(msg.Chat.ID, wait.MessageID))
+	wait, err := h.sender.Send(tgbotapi.NewMessage(msg.Chat.ID, "Processing... ⏳"))
+	if err == nil {
+		defer h.sender.Request(tgbotapi.NewDeleteMessage(msg.Chat.ID, wait.MessageID))
+	}
 
 	info, err := h.service.Info(ctx, text)
 	if err != nil {
@@ -117,7 +120,9 @@ func (h *Handler) sendImages(chatID int64, images []string) {
 		if end > len(media) {
 			end = len(media)
 		}
-		h.sender.SendMediaGroup(tgbotapi.NewMediaGroup(chatID, media[i:end]))
+		if _, err := h.sender.SendMediaGroup(tgbotapi.NewMediaGroup(chatID, media[i:end])); err != nil {
+			log.Printf("sendImages: SendMediaGroup failed: %v", err)
+		}
 	}
 }
 
