@@ -79,6 +79,10 @@ func (h *Handler) OnMessage(ctx context.Context, msg *tgbotapi.Message) {
 func (h *Handler) OnCallback(ctx context.Context, cb *tgbotapi.CallbackQuery) {
 	defer h.sender.Request(tgbotapi.NewCallback(cb.ID, ""))
 
+	if cb.Message == nil {
+		return
+	}
+
 	if !strings.HasPrefix(cb.Data, "mp3:") {
 		return
 	}
@@ -127,7 +131,9 @@ func (h *Handler) sendImages(chatID int64, images []string) {
 }
 
 func (h *Handler) send(c tgbotapi.Chattable) {
-	h.sender.Send(c) //nolint:errcheck
+	if _, err := h.sender.Send(c); err != nil {
+		log.Printf("send failed: %v", err)
+	}
 }
 
 func buildCaption(info *tiktok.InfoResponse) string {
