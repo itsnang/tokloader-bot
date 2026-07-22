@@ -3,6 +3,7 @@ package telegram
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"log"
 	"sync"
 	"time"
 )
@@ -18,21 +19,25 @@ type Cache struct {
 	mu   sync.Mutex
 	data map[string]cacheEntry
 	ttl  time.Duration
+	quit chan struct{}
 }
 
-// NewCache returns a Cache with a 1-hour TTL.
 func NewCache() *Cache {
 	return NewCacheWithTTL(time.Hour)
 }
 
-// NewCacheWithTTL returns a Cache with a custom TTL (used in tests).
+// NewCacheWithTTL is exposed for tests that need a shorter TTL.
 func NewCacheWithTTL(ttl time.Duration) *Cache {
-	c := &Cache{data: make(map[string]cacheEntry), ttl: ttl}
+	c := &Cache{data: make(map[string]cacheEntry), ttl: ttl, quit: make(chan struct{})}
 	go c.janitor()
 	return c
 }
 
-// Put stores a music URL and title, returning an 8-hex-char ID.
+// Close stops the background janitor goroutine.
+func (c *Cache) Close() {
+	close(c.quit)
+}
+
 func (c *Cache) Put(musicURL, title string) string {
 	id := randomID()
 	c.mu.Lock()
@@ -41,7 +46,6 @@ func (c *Cache) Put(musicURL, title string) string {
 	return id
 }
 
-// Get retrieves a music URL by ID. Returns ok=false if expired or not found.
 func (c *Cache) Get(id string) (musicURL, title string, ok bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -54,20 +58,27 @@ func (c *Cache) Get(id string) (musicURL, title string, ok bool) {
 
 func (c *Cache) janitor() {
 	ticker := time.NewTicker(10 * time.Minute)
-	for range ticker.C {
-		now := time.Now()
-		c.mu.Lock()
-		for k, v := range c.data {
-			if now.After(v.expires) {
-				delete(c.data, k)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-c.quit:
+			return
+		case now := <-ticker.C:
+			c.mu.Lock()
+			for k, v := range c.data {
+				if now.After(v.expires) {
+					delete(c.data, k)
+				}
 			}
+			c.mu.Unlock()
 		}
-		c.mu.Unlock()
 	}
 }
 
 func randomID() string {
-	b := make([]byte, 4)
-	_, _ = rand.Read(b)
+	b := make([]byte, 8)
+	if _, err := rand.Read(b); err != nil {
+		log.Panicf("crypto/rand unavailable: %v", err)
+	}
 	return hex.EncodeToString(b)
 }

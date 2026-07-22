@@ -11,6 +11,8 @@ import (
 	"telegram-bot/src/modules/tiktok"
 )
 
+const callbackPrefixMP3 = "mp3:"
+
 // Sender is the subset of tgbotapi.BotAPI methods used by the handler.
 // Defined as an interface so the handler can be tested without a live bot.
 type Sender interface {
@@ -26,12 +28,10 @@ type Handler struct {
 	cache   *Cache
 }
 
-// NewHandler creates a Handler.
 func NewHandler(sender Sender, service tiktok.Service, cache *Cache) *Handler {
 	return &Handler{sender: sender, service: service, cache: cache}
 }
 
-// OnMessage handles an incoming text message.
 func (h *Handler) OnMessage(ctx context.Context, msg *tgbotapi.Message) {
 	text := strings.TrimSpace(msg.Text)
 
@@ -75,7 +75,6 @@ func (h *Handler) OnMessage(ctx context.Context, msg *tgbotapi.Message) {
 	}
 }
 
-// OnCallback handles the MP3 button tap.
 func (h *Handler) OnCallback(ctx context.Context, cb *tgbotapi.CallbackQuery) {
 	defer h.sender.Request(tgbotapi.NewCallback(cb.ID, ""))
 
@@ -83,10 +82,10 @@ func (h *Handler) OnCallback(ctx context.Context, cb *tgbotapi.CallbackQuery) {
 		return
 	}
 
-	if !strings.HasPrefix(cb.Data, "mp3:") {
+	prefix, id, ok := strings.Cut(cb.Data, ":")
+	if !ok || prefix != "mp3" {
 		return
 	}
-	id := strings.TrimPrefix(cb.Data, "mp3:")
 
 	musicURL, title, ok := h.cache.Get(id)
 	if !ok || musicURL == "" {
@@ -108,13 +107,14 @@ func (h *Handler) mp3Button(info *tiktok.InfoResponse) *tgbotapi.InlineKeyboardM
 	id := h.cache.Put(info.Music, info.Title)
 	markup := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🎵 Download MP3", "mp3:"+id),
+			tgbotapi.NewInlineKeyboardButtonData("🎵 Download MP3", callbackPrefixMP3+id),
 		),
 	)
 	return &markup
 }
 
 func (h *Handler) sendImages(chatID int64, images []string) {
+	// tgbotapi.NewMediaGroup requires []interface{} — library predates generics.
 	media := make([]interface{}, 0, len(images))
 	for _, img := range images {
 		media = append(media, tgbotapi.NewInputMediaPhoto(tgbotapi.FileURL(img)))

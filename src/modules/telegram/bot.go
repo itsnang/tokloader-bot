@@ -8,13 +8,11 @@ import (
 	"telegram-bot/src/modules/tiktok"
 )
 
-// Bot wraps the Telegram BotAPI and runs the update loop.
 type Bot struct {
 	api     *tgbotapi.BotAPI
 	handler *Handler
 }
 
-// NewBot creates a Bot from the given token, service, and cache.
 func NewBot(token string, service tiktok.Service, cache *Cache) (*Bot, error) {
 	api, err := tgbotapi.NewBotAPI(token)
 	if err != nil {

@@ -9,13 +9,11 @@ import (
 	"strings"
 )
 
-// Client calls the tikwm.com resolver API.
 type Client struct {
 	baseURL    string
 	httpClient *http.Client
 }
 
-// NewClient creates a Client. baseURL should be "https://www.tikwm.com" in production.
 func NewClient(baseURL string) *Client {
 	return &Client{
 		baseURL:    strings.TrimRight(baseURL, "/"),

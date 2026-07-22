@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// InfoClient is the interface the service depends on (satisfied by *Client).
+// InfoClient is satisfied by *Client but defined here so service.go has no import cycle.
 type InfoClient interface {
 	Info(ctx context.Context, url string) (*InfoResponse, error)
 }
@@ -19,7 +19,6 @@ type service struct {
 	client InfoClient
 }
 
-// NewService wraps client with validation logic.
 func NewService(client InfoClient) Service {
 	return &service{client: client}
 }
