@@ -4,14 +4,14 @@
 
 //go:build !wireinject
 
-package app
+package main
 
 import (
 	"telegram-bot/src/modules/telegram"
 	"telegram-bot/src/modules/tiktok"
 )
 
-func InitBot(token, baseURL string) (*telegram.Bot, error) {
+func initBot(token, baseURL string) (*telegram.Bot, error) {
 	client := tiktok.NewClient(baseURL)
 	service := tiktok.NewService(client)
 	cache := telegram.NewCache()

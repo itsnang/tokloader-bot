@@ -7,7 +7,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -ldflags="-w -s" -o out ./src
+RUN go build -ldflags="-w -s" -o out
 
 FROM alpine:3.21
 
