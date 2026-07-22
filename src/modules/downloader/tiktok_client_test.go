@@ -1,4 +1,4 @@
-package tiktok_test
+package downloader_test
 
 import (
 	"context"
@@ -7,10 +7,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"telegram-bot/src/modules/tiktok"
+	"telegram-bot/src/modules/downloader"
 )
 
-func newTestServer(t *testing.T, response map[string]any) *httptest.Server {
+func newTikwmServer(t *testing.T, response map[string]any) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -18,8 +18,8 @@ func newTestServer(t *testing.T, response map[string]any) *httptest.Server {
 	}))
 }
 
-func TestClient_Info_Video(t *testing.T) {
-	srv := newTestServer(t, map[string]any{
+func TestTikTokClient_Info_Video(t *testing.T) {
+	srv := newTikwmServer(t, map[string]any{
 		"code": 0,
 		"msg":  "success",
 		"data": map[string]any{
@@ -30,13 +30,12 @@ func TestClient_Info_Video(t *testing.T) {
 			"cover":    "https://example.com/cover.jpg",
 			"hdplay":   "https://example.com/video_hd.mp4",
 			"play":     "https://example.com/video.mp4",
-			"wmplay":   "https://example.com/video_wm.mp4",
 			"music":    "https://example.com/music.mp3",
 		},
 	})
 	defer srv.Close()
 
-	client := tiktok.NewClient(srv.URL)
+	client := downloader.NewTikTokClient(downloader.Config{TikwmBaseURL: srv.URL})
 	info, err := client.Info(context.Background(), "https://tiktok.com/test")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -44,19 +43,19 @@ func TestClient_Info_Video(t *testing.T) {
 	if info.ID != "123" {
 		t.Errorf("ID: want 123, got %s", info.ID)
 	}
-	if info.NoWatermark != "https://example.com/video_hd.mp4" {
-		t.Errorf("NoWatermark: want hdplay URL, got %s", info.NoWatermark)
+	if info.VideoURL != "https://example.com/video_hd.mp4" {
+		t.Errorf("VideoURL: want hdplay URL, got %s", info.VideoURL)
 	}
-	if info.Music != "https://example.com/music.mp3" {
-		t.Errorf("Music: want music URL, got %s", info.Music)
+	if info.AudioURL != "https://example.com/music.mp3" {
+		t.Errorf("AudioURL: want music URL, got %s", info.AudioURL)
 	}
 	if info.IsImage() {
 		t.Error("expected IsImage() = false for video post")
 	}
 }
 
-func TestClient_Info_HDPlayFallback(t *testing.T) {
-	srv := newTestServer(t, map[string]any{
+func TestTikTokClient_Info_HDPlayFallback(t *testing.T) {
+	srv := newTikwmServer(t, map[string]any{
 		"code": 0,
 		"msg":  "success",
 		"data": map[string]any{
@@ -65,24 +64,23 @@ func TestClient_Info_HDPlayFallback(t *testing.T) {
 			"author": map[string]any{"unique_id": "testuser"},
 			"hdplay": "",
 			"play":   "https://example.com/video.mp4",
-			"wmplay": "https://example.com/video_wm.mp4",
 			"music":  "https://example.com/music.mp3",
 		},
 	})
 	defer srv.Close()
 
-	client := tiktok.NewClient(srv.URL)
+	client := downloader.NewTikTokClient(downloader.Config{TikwmBaseURL: srv.URL})
 	info, err := client.Info(context.Background(), "https://tiktok.com/test")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if info.NoWatermark != "https://example.com/video.mp4" {
-		t.Errorf("NoWatermark: want play fallback URL, got %s", info.NoWatermark)
+	if info.VideoURL != "https://example.com/video.mp4" {
+		t.Errorf("VideoURL: want play fallback URL, got %s", info.VideoURL)
 	}
 }
 
-func TestClient_Info_Slideshow(t *testing.T) {
-	srv := newTestServer(t, map[string]any{
+func TestTikTokClient_Info_Slideshow(t *testing.T) {
+	srv := newTikwmServer(t, map[string]any{
 		"code": 0,
 		"msg":  "success",
 		"data": map[string]any{
@@ -98,7 +96,7 @@ func TestClient_Info_Slideshow(t *testing.T) {
 	})
 	defer srv.Close()
 
-	client := tiktok.NewClient(srv.URL)
+	client := downloader.NewTikTokClient(downloader.Config{TikwmBaseURL: srv.URL})
 	info, err := client.Info(context.Background(), "https://tiktok.com/test")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -111,14 +109,14 @@ func TestClient_Info_Slideshow(t *testing.T) {
 	}
 }
 
-func TestClient_Info_APIError(t *testing.T) {
-	srv := newTestServer(t, map[string]any{
+func TestTikTokClient_Info_APIError(t *testing.T) {
+	srv := newTikwmServer(t, map[string]any{
 		"code": -1,
 		"msg":  "video not found",
 	})
 	defer srv.Close()
 
-	client := tiktok.NewClient(srv.URL)
+	client := downloader.NewTikTokClient(downloader.Config{TikwmBaseURL: srv.URL})
 	_, err := client.Info(context.Background(), "https://tiktok.com/test")
 	if err == nil {
 		t.Error("expected error for non-zero API code")

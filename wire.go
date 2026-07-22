@@ -5,11 +5,11 @@ package main
 import (
 	"github.com/google/wire"
 
+	"telegram-bot/src/modules/downloader"
 	"telegram-bot/src/modules/telegram"
-	"telegram-bot/src/modules/tiktok"
 )
 
-func initBot(token, baseURL string) (*telegram.Bot, error) {
-	wire.Build(tiktok.ProviderSet, telegram.ProviderSet)
+func initBot(token string, cfg downloader.Config) (*telegram.Bot, error) {
+	wire.Build(downloader.ProviderSet, telegram.ProviderSet)
 	return nil, nil
 }

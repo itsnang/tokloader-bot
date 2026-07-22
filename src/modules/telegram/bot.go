@@ -5,7 +5,7 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-	"telegram-bot/src/modules/tiktok"
+	"telegram-bot/src/modules/downloader"
 )
 
 type Bot struct {
@@ -13,7 +13,7 @@ type Bot struct {
 	handler *Handler
 }
 
-func NewBot(token string, service tiktok.Service, cache *Cache) (*Bot, error) {
+func NewBot(token string, service downloader.Resolver, cache *Cache) (*Bot, error) {
 	api, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, err

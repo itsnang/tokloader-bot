@@ -7,15 +7,19 @@
 package main
 
 import (
+	"telegram-bot/src/modules/downloader"
 	"telegram-bot/src/modules/telegram"
-	"telegram-bot/src/modules/tiktok"
 )
 
-func initBot(token, baseURL string) (*telegram.Bot, error) {
-	client := tiktok.NewClient(baseURL)
-	service := tiktok.NewService(client)
+func initBot(token string, cfg downloader.Config) (*telegram.Bot, error) {
+	tikTokClient := downloader.NewTikTokClient(cfg)
+	tikTokService := downloader.NewTikTokService(tikTokClient)
+	cobaltClient := downloader.NewCobaltClient(cfg)
+	instagramService := downloader.NewInstagramService(cobaltClient, cfg)
+	facebookService := downloader.NewFacebookService(cobaltClient, cfg)
+	router := downloader.NewRouter(tikTokService, instagramService, facebookService)
 	cache := telegram.NewCache()
-	bot, err := telegram.NewBot(token, service, cache)
+	bot, err := telegram.NewBot(token, router, cache)
 	if err != nil {
 		return nil, err
 	}
