@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/joho/godotenv"
+	"telegram-bot/src/app"
 )
 
 func main() {
@@ -25,7 +26,7 @@ func main() {
 		baseURL = "https://www.tikwm.com"
 	}
 
-	bot, err := initBot(token, baseURL)
+	bot, err := app.InitBot(token, baseURL)
 	if err != nil {
 		log.Fatalf("init bot: %v", err)
 	}

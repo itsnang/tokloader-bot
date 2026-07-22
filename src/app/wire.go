@@ -1,6 +1,6 @@
 //go:build wireinject
 
-package main
+package app
 
 import (
 	"github.com/google/wire"
@@ -9,7 +9,7 @@ import (
 	"telegram-bot/src/modules/tiktok"
 )
 
-func initBot(token, baseURL string) (*telegram.Bot, error) {
+func InitBot(token, baseURL string) (*telegram.Bot, error) {
 	wire.Build(tiktok.ProviderSet, telegram.ProviderSet)
 	return nil, nil
 }
