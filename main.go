@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/joho/godotenv"
@@ -25,8 +26,8 @@ func main() {
 	cfg := downloader.Config{
 		TikwmBaseURL:    getEnvOrDefault("TIKWM_BASE_URL", "https://www.tikwm.com"),
 		CobaltBaseURL:   getEnvOrDefault("COBALT_BASE_URL", "https://api.cobalt.tools"),
-		InstagramCookie: os.Getenv("INSTAGRAM_COOKIE"),
-		FacebookCookie:  os.Getenv("FACEBOOK_COOKIE"),
+		InstagramCookie: strings.TrimSpace(os.Getenv("INSTAGRAM_COOKIE")),
+		FacebookCookie:  strings.TrimSpace(os.Getenv("FACEBOOK_COOKIE")),
 	}
 
 	bot, err := initBot(token, cfg)
@@ -43,7 +44,7 @@ func main() {
 }
 
 func getEnvOrDefault(key, def string) string {
-	if v := os.Getenv(key); v != "" {
+	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
 		return v
 	}
 	return def
