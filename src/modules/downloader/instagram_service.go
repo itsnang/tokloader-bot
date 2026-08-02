@@ -1,29 +1,19 @@
 package downloader
 
-import (
-	"context"
-	"fmt"
-	"strings"
-)
+import "context"
 
-// InstagramService resolves Instagram reels, posts, and stories via cobalt.tools.
-//
-// Stories require a logged-in session cookie. Without INSTAGRAM_COOKIE set,
-// story requests return a descriptive error rather than silently failing.
+// InstagramService resolves Instagram reels, posts, and stories via cobalt.
+// Story support requires INSTAGRAM_COOKIE to be configured in the cobalt service (not the bot).
 type InstagramService struct {
 	client *CobaltClient
-	cookie string
 }
 
-func NewInstagramService(client *CobaltClient, cfg Config) *InstagramService {
-	return &InstagramService{client: client, cookie: cfg.InstagramCookie}
+func NewInstagramService(client *CobaltClient) *InstagramService {
+	return &InstagramService{client: client}
 }
 
 func (s *InstagramService) Resolve(ctx context.Context, rawURL string) (*MediaResponse, error) {
-	if strings.Contains(rawURL, "/stories/") && s.cookie == "" {
-		return nil, fmt.Errorf("Instagram stories require a session cookie — set INSTAGRAM_COOKIE in config")
-	}
-	cr, err := s.client.Fetch(ctx, rawURL, "auto", s.cookie)
+	cr, err := s.client.Fetch(ctx, rawURL, "auto", "")
 	if err != nil {
 		return nil, err
 	}

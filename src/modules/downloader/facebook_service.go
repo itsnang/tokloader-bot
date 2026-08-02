@@ -6,24 +6,21 @@ import (
 	"strings"
 )
 
-// FacebookService resolves Facebook videos and stories via cobalt.tools.
-//
-// Stories require a logged-in session cookie. Without FACEBOOK_COOKIE set,
-// story requests return a descriptive error rather than silently failing.
+// FacebookService resolves Facebook videos via cobalt.
+// Facebook stories are not supported by cobalt (the /stories/ URL format is not matched).
 type FacebookService struct {
 	client *CobaltClient
-	cookie string
 }
 
-func NewFacebookService(client *CobaltClient, cfg Config) *FacebookService {
-	return &FacebookService{client: client, cookie: cfg.FacebookCookie}
+func NewFacebookService(client *CobaltClient) *FacebookService {
+	return &FacebookService{client: client}
 }
 
 func (s *FacebookService) Resolve(ctx context.Context, rawURL string) (*MediaResponse, error) {
-	if strings.Contains(rawURL, "/stories/") && s.cookie == "" {
-		return nil, fmt.Errorf("Facebook stories require a session cookie — set FACEBOOK_COOKIE in config")
+	if strings.Contains(rawURL, "/stories/") {
+		return nil, fmt.Errorf("Facebook stories are not supported")
 	}
-	cr, err := s.client.Fetch(ctx, rawURL, "auto", s.cookie)
+	cr, err := s.client.Fetch(ctx, rawURL, "auto", "")
 	if err != nil {
 		return nil, err
 	}
