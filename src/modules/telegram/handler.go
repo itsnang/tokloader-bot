@@ -2,13 +2,14 @@ package telegram
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-	"telegram-bot/src/modules/tiktok"
+	"telegram-bot/src/modules/downloader"
 )
 
 const callbackPrefixMP3 = "mp3:"
@@ -24,11 +25,11 @@ type Sender interface {
 // Handler processes Telegram messages and callback queries.
 type Handler struct {
 	sender  Sender
-	service tiktok.Service
+	service downloader.Resolver
 	cache   *Cache
 }
 
-func NewHandler(sender Sender, service tiktok.Service, cache *Cache) *Handler {
+func NewHandler(sender Sender, service downloader.Resolver, cache *Cache) *Handler {
 	return &Handler{sender: sender, service: service, cache: cache}
 }
 
@@ -36,11 +37,11 @@ func (h *Handler) OnMessage(ctx context.Context, msg *tgbotapi.Message) {
 	text := strings.TrimSpace(msg.Text)
 
 	if text == "/start" {
-		h.send(tgbotapi.NewMessage(msg.Chat.ID, "Send me a TikTok link and I'll grab it for you 🎬"))
+		h.send(tgbotapi.NewMessage(msg.Chat.ID, "Send me a TikTok, Instagram, or Facebook link and I'll grab it for you 🎬"))
 		return
 	}
-	if !strings.Contains(strings.ToLower(text), "tiktok.com") {
-		h.send(tgbotapi.NewMessage(msg.Chat.ID, "That doesn't look like a TikTok link 🤔"))
+	if !strings.HasPrefix(text, "http://") && !strings.HasPrefix(text, "https://") {
+		h.send(tgbotapi.NewMessage(msg.Chat.ID, "Send me a link from TikTok, Instagram, or Facebook 🔗"))
 		return
 	}
 
@@ -49,9 +50,13 @@ func (h *Handler) OnMessage(ctx context.Context, msg *tgbotapi.Message) {
 		defer h.sender.Request(tgbotapi.NewDeleteMessage(msg.Chat.ID, wait.MessageID))
 	}
 
-	info, err := h.service.Info(ctx, text)
+	info, err := h.service.Resolve(ctx, text)
 	if err != nil {
-		h.send(tgbotapi.NewMessage(msg.Chat.ID, "Couldn't fetch that video 😕 "+err.Error()))
+		if errors.Is(err, downloader.ErrUnsupportedURL) {
+			h.send(tgbotapi.NewMessage(msg.Chat.ID, "Unsupported link 🤔 Send a TikTok, Instagram, or Facebook URL."))
+		} else {
+			h.send(tgbotapi.NewMessage(msg.Chat.ID, "Couldn't fetch that video 😕 "+err.Error()))
+		}
 		return
 	}
 
@@ -66,7 +71,7 @@ func (h *Handler) OnMessage(ctx context.Context, msg *tgbotapi.Message) {
 		}
 		h.send(out)
 	} else {
-		video := tgbotapi.NewVideo(msg.Chat.ID, tgbotapi.FileURL(info.NoWatermark))
+		video := tgbotapi.NewVideo(msg.Chat.ID, tgbotapi.FileURL(info.VideoURL))
 		video.Caption = caption
 		if mp3Btn != nil {
 			video.ReplyMarkup = mp3Btn
@@ -100,11 +105,11 @@ func (h *Handler) OnCallback(ctx context.Context, cb *tgbotapi.CallbackQuery) {
 	h.send(audio)
 }
 
-func (h *Handler) mp3Button(info *tiktok.InfoResponse) *tgbotapi.InlineKeyboardMarkup {
-	if info.Music == "" {
+func (h *Handler) mp3Button(info *downloader.MediaResponse) *tgbotapi.InlineKeyboardMarkup {
+	if info.AudioURL == "" {
 		return nil
 	}
-	id := h.cache.Put(info.Music, info.Title)
+	id := h.cache.Put(info.AudioURL, info.Title)
 	markup := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("🎵 Download MP3", callbackPrefixMP3+id),
@@ -136,7 +141,7 @@ func (h *Handler) send(c tgbotapi.Chattable) {
 	}
 }
 
-func buildCaption(info *tiktok.InfoResponse) string {
+func buildCaption(info *downloader.MediaResponse) string {
 	if info.Author != "" {
 		return fmt.Sprintf("%s\n\n👤 %s", info.Title, info.Author)
 	}

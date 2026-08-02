@@ -8,6 +8,8 @@ import (
 	"syscall"
 
 	"github.com/joho/godotenv"
+
+	"telegram-bot/src/modules/downloader"
 )
 
 func main() {
@@ -20,12 +22,14 @@ func main() {
 		log.Fatal("TELEGRAM_BOT_TOKEN is required")
 	}
 
-	baseURL := os.Getenv("TIKWM_BASE_URL")
-	if baseURL == "" {
-		baseURL = "https://www.tikwm.com"
+	cfg := downloader.Config{
+		TikwmBaseURL:    getEnvOrDefault("TIKWM_BASE_URL", "https://www.tikwm.com"),
+		CobaltBaseURL:   getEnvOrDefault("COBALT_BASE_URL", "https://api.cobalt.tools"),
+		InstagramCookie: os.Getenv("INSTAGRAM_COOKIE"),
+		FacebookCookie:  os.Getenv("FACEBOOK_COOKIE"),
 	}
 
-	bot, err := initBot(token, baseURL)
+	bot, err := initBot(token, cfg)
 	if err != nil {
 		log.Fatalf("init bot: %v", err)
 	}
@@ -36,4 +40,11 @@ func main() {
 	log.Println("Bot started. Press Ctrl+C to stop.")
 	bot.Start(ctx)
 	log.Println("Bot stopped.")
+}
+
+func getEnvOrDefault(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }
