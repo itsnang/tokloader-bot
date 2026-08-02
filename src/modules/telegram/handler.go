@@ -34,11 +34,11 @@ func (h *Handler) OnMessage(ctx context.Context, msg *tgbotapi.Message) {
 	text := strings.TrimSpace(msg.Text)
 
 	if text == "/start" {
-		h.send(tgbotapi.NewMessage(msg.Chat.ID, "Send me a TikTok, Instagram, or Facebook link and I'll grab it for you 🎬"))
+		h.send(tgbotapi.NewMessage(msg.Chat.ID, "Send me a TikTok, Instagram, Facebook, or YouTube link and I'll grab it for you 🎬"))
 		return
 	}
 	if !strings.HasPrefix(text, "http://") && !strings.HasPrefix(text, "https://") {
-		h.send(tgbotapi.NewMessage(msg.Chat.ID, "Send me a link from TikTok, Instagram, or Facebook 🔗"))
+		h.send(tgbotapi.NewMessage(msg.Chat.ID, "Send me a link from TikTok, Instagram, Facebook, or YouTube 🔗"))
 		return
 	}
 

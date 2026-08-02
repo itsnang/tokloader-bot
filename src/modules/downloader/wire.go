@@ -8,6 +8,7 @@ var ProviderSet = wire.NewSet(
 	NewCobaltClient,
 	NewInstagramService,
 	NewFacebookService,
+	NewYouTubeService,
 	NewRouter,
 	wire.Bind(new(Resolver), new(*Router)),
 )
