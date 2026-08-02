@@ -14,6 +14,7 @@ import (
 // Shared by the Instagram and Facebook providers.
 type CobaltClient struct {
 	baseURL    string
+	apiKey     string
 	httpClient *http.Client
 }
 
@@ -24,6 +25,7 @@ func NewCobaltClient(cfg Config) *CobaltClient {
 	}
 	return &CobaltClient{
 		baseURL:    baseURL,
+		apiKey:     cfg.CobaltAPIKey,
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 	}
 }
@@ -64,6 +66,9 @@ func (c *CobaltClient) Fetch(ctx context.Context, mediaURL, mode, cookie string)
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "tokloader-bot/1.0")
+	if c.apiKey != "" {
+		req.Header.Set("Authorization", "Api-Key "+c.apiKey)
+	}
 	if cookie != "" {
 		req.Header.Set("Cookie", cookie)
 	}
