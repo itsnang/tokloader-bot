@@ -6,8 +6,6 @@ import (
 	"strings"
 )
 
-// FacebookService resolves Facebook videos via cobalt.
-// Facebook stories are not supported by cobalt (the /stories/ URL format is not matched).
 type FacebookService struct {
 	client *CobaltClient
 }
@@ -18,9 +16,9 @@ func NewFacebookService(client *CobaltClient) *FacebookService {
 
 func (s *FacebookService) Resolve(ctx context.Context, rawURL string) (*MediaResponse, error) {
 	if strings.Contains(rawURL, "/stories/") {
-		return nil, fmt.Errorf("Facebook stories are not supported")
+		return nil, fmt.Errorf("Facebook stories are not supported: %w", ErrUnsupportedURL)
 	}
-	cr, err := s.client.Fetch(ctx, rawURL, "auto", "")
+	cr, err := s.client.Fetch(ctx, rawURL)
 	if err != nil {
 		return nil, err
 	}

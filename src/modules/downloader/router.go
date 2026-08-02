@@ -6,26 +6,20 @@ import (
 	"strings"
 )
 
-// Router inspects a URL and delegates to the matching platform Resolver.
-// It implements Resolver itself, so the telegram handler is platform-unaware.
 type Router struct {
 	tiktok    Resolver
 	instagram Resolver
 	facebook  Resolver
 }
 
-// NewRouter is the Wire-compatible constructor; takes concrete types so Wire
-// can distinguish between the three Resolver implementations.
 func NewRouter(t *TikTokService, i *InstagramService, f *FacebookService) *Router {
 	return &Router{tiktok: t, instagram: i, facebook: f}
 }
 
-// NewRouterWithResolvers constructs a Router from interface values; used in tests.
 func NewRouterWithResolvers(tiktok, instagram, facebook Resolver) *Router {
 	return &Router{tiktok: tiktok, instagram: instagram, facebook: facebook}
 }
 
-// Resolve implements Resolver.
 func (r *Router) Resolve(ctx context.Context, rawURL string) (*MediaResponse, error) {
 	host, err := parseHost(rawURL)
 	if err != nil {
