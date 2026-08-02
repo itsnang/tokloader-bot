@@ -10,19 +10,14 @@ import (
 	"time"
 )
 
-// TikTokClient calls the tikwm.com resolver API.
 type TikTokClient struct {
 	baseURL    string
 	httpClient *http.Client
 }
 
 func NewTikTokClient(cfg Config) *TikTokClient {
-	baseURL := strings.TrimRight(cfg.TikwmBaseURL, "/")
-	if baseURL == "" {
-		baseURL = "https://www.tikwm.com"
-	}
 	return &TikTokClient{
-		baseURL:    baseURL,
+		baseURL:    strings.TrimRight(cfg.TikwmBaseURL, "/"),
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 	}
 }
@@ -49,7 +44,6 @@ type tikwmResponse struct {
 	Data tikwmData `json:"data"`
 }
 
-// Info resolves a TikTok URL and returns post metadata as a MediaResponse.
 func (c *TikTokClient) Info(ctx context.Context, tikTokURL string) (*MediaResponse, error) {
 	form := url.Values{}
 	form.Set("url", tikTokURL)
@@ -79,6 +73,9 @@ func (c *TikTokClient) Info(ctx context.Context, tikTokURL string) (*MediaRespon
 	videoURL := raw.Data.HDPlay
 	if videoURL == "" {
 		videoURL = raw.Data.Play
+	}
+	if videoURL == "" && len(raw.Data.Images) == 0 {
+		return nil, fmt.Errorf("resolver returned no usable video URL")
 	}
 
 	return &MediaResponse{

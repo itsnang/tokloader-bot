@@ -12,7 +12,6 @@ import (
 	"telegram-bot/src/modules/telegram"
 )
 
-// mockSender captures sent messages for assertions.
 // Uses interface{} because MediaGroupConfig is not Chattable.
 type mockSender struct {
 	mu       sync.Mutex
@@ -41,7 +40,6 @@ func (m *mockSender) SendMediaGroup(config tgbotapi.MediaGroupConfig) ([]tgbotap
 	return []tgbotapi.Message{}, nil
 }
 
-// mockResolver returns preset results.
 type mockResolver struct {
 	media *downloader.MediaResponse
 	err   error
@@ -87,7 +85,6 @@ func TestHandler_OnMessage_UnsupportedURL(t *testing.T) {
 
 	h.OnMessage(context.Background(), newMsg(42, "https://youtube.com/watch?v=xxx"))
 
-	// sent[0] = "Processing...", sent[1] = unsupported error reply
 	if len(sender.sent) < 2 {
 		t.Fatalf("expected at least 2 sends (processing + error), got %d", len(sender.sent))
 	}
@@ -148,7 +145,6 @@ func TestHandler_OnMessage_ServiceError(t *testing.T) {
 
 	h.OnMessage(context.Background(), newMsg(42, "https://www.tiktok.com/@user/video/1"))
 
-	// sent[0] = "Processing...", sent[1] = error reply
 	if len(sender.sent) < 2 {
 		t.Fatalf("expected at least 2 sends (processing + error), got %d", len(sender.sent))
 	}

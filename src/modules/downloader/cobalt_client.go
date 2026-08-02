@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-// CobaltClient calls the cobalt.tools media resolver API.
-// Shared by the Instagram and Facebook providers.
 type CobaltClient struct {
 	baseURL    string
 	apiKey     string
@@ -19,12 +17,8 @@ type CobaltClient struct {
 }
 
 func NewCobaltClient(cfg Config) *CobaltClient {
-	baseURL := strings.TrimRight(cfg.CobaltBaseURL, "/")
-	if baseURL == "" {
-		baseURL = "https://api.cobalt.tools"
-	}
 	return &CobaltClient{
-		baseURL:    baseURL,
+		baseURL:    strings.TrimRight(cfg.CobaltBaseURL, "/"),
 		apiKey:     cfg.CobaltAPIKey,
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 	}
@@ -51,10 +45,8 @@ type cobaltResponse struct {
 	Error  *cobaltError       `json:"error"`
 }
 
-// Fetch sends a request to cobalt and returns the parsed response.
-// cookie is optional; when non-empty it is forwarded as a Cookie header (needed for stories).
-func (c *CobaltClient) Fetch(ctx context.Context, mediaURL, mode, cookie string) (*cobaltResponse, error) {
-	body, err := json.Marshal(cobaltRequest{URL: mediaURL, DownloadMode: mode})
+func (c *CobaltClient) Fetch(ctx context.Context, mediaURL string) (*cobaltResponse, error) {
+	body, err := json.Marshal(cobaltRequest{URL: mediaURL, DownloadMode: "auto"})
 	if err != nil {
 		return nil, fmt.Errorf("marshal: %w", err)
 	}
@@ -68,9 +60,6 @@ func (c *CobaltClient) Fetch(ctx context.Context, mediaURL, mode, cookie string)
 	req.Header.Set("User-Agent", "tokloader-bot/1.0")
 	if c.apiKey != "" {
 		req.Header.Set("Authorization", "Api-Key "+c.apiKey)
-	}
-	if cookie != "" {
-		req.Header.Set("Cookie", cookie)
 	}
 
 	resp, err := c.httpClient.Do(req)
@@ -93,12 +82,11 @@ func (c *CobaltClient) Fetch(ctx context.Context, mediaURL, mode, cookie string)
 	return &cr, nil
 }
 
-// toMediaResponse converts a cobalt API response to a MediaResponse.
 func (cr *cobaltResponse) toMediaResponse() *MediaResponse {
 	if cr.Status == "picker" {
-		images := make([]string, 0, len(cr.Picker))
-		for _, item := range cr.Picker {
-			images = append(images, item.URL)
+		images := make([]string, len(cr.Picker))
+		for i, item := range cr.Picker {
+			images[i] = item.URL
 		}
 		return &MediaResponse{Images: images}
 	}

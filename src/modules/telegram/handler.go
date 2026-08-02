@@ -14,15 +14,12 @@ import (
 
 const callbackPrefixMP3 = "mp3:"
 
-// Sender is the subset of tgbotapi.BotAPI methods used by the handler.
-// Defined as an interface so the handler can be tested without a live bot.
 type Sender interface {
 	Send(c tgbotapi.Chattable) (tgbotapi.Message, error)
 	Request(c tgbotapi.Chattable) (*tgbotapi.APIResponse, error)
 	SendMediaGroup(config tgbotapi.MediaGroupConfig) ([]tgbotapi.Message, error)
 }
 
-// Handler processes Telegram messages and callback queries.
 type Handler struct {
 	sender  Sender
 	service downloader.Resolver
