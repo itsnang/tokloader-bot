@@ -26,6 +26,7 @@ func main() {
 	cfg := downloader.Config{
 		TikwmBaseURL:    getEnvOrDefault("TIKWM_BASE_URL", "https://www.tikwm.com"),
 		CobaltBaseURL:   getEnvOrDefault("COBALT_BASE_URL", "https://api.cobalt.tools"),
+		CobaltAPIKey:    strings.TrimSpace(os.Getenv("COBALT_API_KEY")),
 		InstagramCookie: strings.TrimSpace(os.Getenv("INSTAGRAM_COOKIE")),
 		FacebookCookie:  strings.TrimSpace(os.Getenv("FACEBOOK_COOKIE")),
 	}
