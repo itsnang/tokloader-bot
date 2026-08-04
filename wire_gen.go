@@ -17,7 +17,8 @@ func initBot(token string, cfg downloader.Config) (*telegram.Bot, error) {
 	cobaltClient := downloader.NewCobaltClient(cfg)
 	instagramService := downloader.NewInstagramService(cobaltClient)
 	facebookService := downloader.NewFacebookService(cobaltClient)
-	router := downloader.NewRouter(tikTokService, instagramService, facebookService)
+	youTubeService := downloader.NewYouTubeService(cobaltClient)
+	router := downloader.NewRouter(tikTokService, instagramService, facebookService, youTubeService)
 	cache := telegram.NewCache()
 	bot, err := telegram.NewBot(token, router, cache)
 	if err != nil {

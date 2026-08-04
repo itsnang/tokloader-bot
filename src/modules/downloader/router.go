@@ -10,14 +10,15 @@ type Router struct {
 	tiktok    Resolver
 	instagram Resolver
 	facebook  Resolver
+	youtube   Resolver
 }
 
-func NewRouter(t *TikTokService, i *InstagramService, f *FacebookService) *Router {
-	return &Router{tiktok: t, instagram: i, facebook: f}
+func NewRouter(t *TikTokService, i *InstagramService, f *FacebookService, y *YouTubeService) *Router {
+	return &Router{tiktok: t, instagram: i, facebook: f, youtube: y}
 }
 
-func NewRouterWithResolvers(tiktok, instagram, facebook Resolver) *Router {
-	return &Router{tiktok: tiktok, instagram: instagram, facebook: facebook}
+func NewRouterWithResolvers(tiktok, instagram, facebook, youtube Resolver) *Router {
+	return &Router{tiktok: tiktok, instagram: instagram, facebook: facebook, youtube: youtube}
 }
 
 func (r *Router) Resolve(ctx context.Context, rawURL string) (*MediaResponse, error) {
@@ -32,6 +33,8 @@ func (r *Router) Resolve(ctx context.Context, rawURL string) (*MediaResponse, er
 		return r.instagram.Resolve(ctx, rawURL)
 	case strings.Contains(host, "facebook.com"), strings.Contains(host, "fb.watch"):
 		return r.facebook.Resolve(ctx, rawURL)
+	case strings.Contains(host, "youtube.com"), strings.Contains(host, "youtu.be"):
+		return r.youtube.Resolve(ctx, rawURL)
 	}
 	return nil, ErrUnsupportedURL
 }

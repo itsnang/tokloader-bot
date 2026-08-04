@@ -58,7 +58,7 @@ func newMsg(chatID int64, text string) *tgbotapi.Message {
 
 func TestHandler_OnMessage_Start(t *testing.T) {
 	sender := &mockSender{}
-	h := telegram.NewHandler(sender, &mockResolver{}, telegram.NewCache())
+	h := telegram.NewHandler(sender, &mockResolver{}, telegram.NewCache(), "")
 
 	h.OnMessage(context.Background(), newMsg(42, "/start"))
 
@@ -69,7 +69,7 @@ func TestHandler_OnMessage_Start(t *testing.T) {
 
 func TestHandler_OnMessage_NonURL(t *testing.T) {
 	sender := &mockSender{}
-	h := telegram.NewHandler(sender, &mockResolver{}, telegram.NewCache())
+	h := telegram.NewHandler(sender, &mockResolver{}, telegram.NewCache(), "")
 
 	h.OnMessage(context.Background(), newMsg(42, "hello world"))
 
@@ -81,7 +81,7 @@ func TestHandler_OnMessage_NonURL(t *testing.T) {
 func TestHandler_OnMessage_UnsupportedURL(t *testing.T) {
 	sender := &mockSender{}
 	svc := &mockResolver{err: downloader.ErrUnsupportedURL}
-	h := telegram.NewHandler(sender, svc, telegram.NewCache())
+	h := telegram.NewHandler(sender, svc, telegram.NewCache(), "")
 
 	h.OnMessage(context.Background(), newMsg(42, "https://youtube.com/watch?v=xxx"))
 
@@ -99,7 +99,7 @@ func TestHandler_OnMessage_Video(t *testing.T) {
 		VideoURL: "https://cdn.example.com/video.mp4",
 		AudioURL: "https://cdn.example.com/music.mp3",
 	}}
-	h := telegram.NewHandler(sender, svc, telegram.NewCache())
+	h := telegram.NewHandler(sender, svc, telegram.NewCache(), "")
 
 	h.OnMessage(context.Background(), newMsg(42, "https://www.tiktok.com/@user/video/1"))
 
@@ -123,7 +123,7 @@ func TestHandler_OnMessage_Slideshow(t *testing.T) {
 		Images:   []string{"https://cdn.example.com/img1.jpg", "https://cdn.example.com/img2.jpg"},
 		AudioURL: "https://cdn.example.com/music.mp3",
 	}}
-	h := telegram.NewHandler(sender, svc, telegram.NewCache())
+	h := telegram.NewHandler(sender, svc, telegram.NewCache(), "")
 
 	h.OnMessage(context.Background(), newMsg(42, "https://www.tiktok.com/@user/photo/2"))
 
@@ -141,7 +141,7 @@ func TestHandler_OnMessage_Slideshow(t *testing.T) {
 func TestHandler_OnMessage_ServiceError(t *testing.T) {
 	sender := &mockSender{}
 	svc := &mockResolver{err: errors.New("not found")}
-	h := telegram.NewHandler(sender, svc, telegram.NewCache())
+	h := telegram.NewHandler(sender, svc, telegram.NewCache(), "")
 
 	h.OnMessage(context.Background(), newMsg(42, "https://www.tiktok.com/@user/video/1"))
 
@@ -154,7 +154,7 @@ func TestHandler_OnCallback_MP3(t *testing.T) {
 	sender := &mockSender{}
 	cache := telegram.NewCache()
 	id := cache.Put("https://cdn.example.com/music.mp3", "Test Song")
-	h := telegram.NewHandler(sender, &mockResolver{}, cache)
+	h := telegram.NewHandler(sender, &mockResolver{}, cache, "")
 
 	cb := &tgbotapi.CallbackQuery{
 		ID:   "cb1",
@@ -178,7 +178,7 @@ func TestHandler_OnCallback_MP3(t *testing.T) {
 
 func TestHandler_OnCallback_ExpiredID(t *testing.T) {
 	sender := &mockSender{}
-	h := telegram.NewHandler(sender, &mockResolver{}, telegram.NewCache())
+	h := telegram.NewHandler(sender, &mockResolver{}, telegram.NewCache(), "")
 
 	cb := &tgbotapi.CallbackQuery{
 		ID:   "cb2",

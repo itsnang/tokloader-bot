@@ -21,24 +21,25 @@ type Sender interface {
 }
 
 type Handler struct {
-	sender  Sender
-	service downloader.Resolver
-	cache   *Cache
+	sender          Sender
+	service         downloader.Resolver
+	cache           *Cache
+	promoteUsername string
 }
 
-func NewHandler(sender Sender, service downloader.Resolver, cache *Cache) *Handler {
-	return &Handler{sender: sender, service: service, cache: cache}
+func NewHandler(sender Sender, service downloader.Resolver, cache *Cache, promoteUsername string) *Handler {
+	return &Handler{sender: sender, service: service, cache: cache, promoteUsername: promoteUsername}
 }
 
 func (h *Handler) OnMessage(ctx context.Context, msg *tgbotapi.Message) {
 	text := strings.TrimSpace(msg.Text)
 
 	if text == "/start" {
-		h.send(tgbotapi.NewMessage(msg.Chat.ID, "Send me a TikTok, Instagram, or Facebook link and I'll grab it for you 🎬"))
+		h.send(tgbotapi.NewMessage(msg.Chat.ID, "Send me a TikTok, Instagram, Facebook, or YouTube link and I'll grab it for you 🎬"))
 		return
 	}
 	if !strings.HasPrefix(text, "http://") && !strings.HasPrefix(text, "https://") {
-		h.send(tgbotapi.NewMessage(msg.Chat.ID, "Send me a link from TikTok, Instagram, or Facebook 🔗"))
+		h.send(tgbotapi.NewMessage(msg.Chat.ID, "Send me a link from TikTok, Instagram, Facebook, or YouTube 🔗"))
 		return
 	}
 
@@ -75,6 +76,15 @@ func (h *Handler) OnMessage(ctx context.Context, msg *tgbotapi.Message) {
 		}
 		h.send(video)
 	}
+
+	h.sendPromotion(msg.Chat.ID)
+}
+
+func (h *Handler) sendPromotion(chatID int64) {
+	if h.promoteUsername == "" {
+		return
+	}
+	h.send(tgbotapi.NewMessage(chatID, fmt.Sprintf("👋 We have a new bot! Switch to @%s for more features.", h.promoteUsername)))
 }
 
 func (h *Handler) OnCallback(ctx context.Context, cb *tgbotapi.CallbackQuery) {

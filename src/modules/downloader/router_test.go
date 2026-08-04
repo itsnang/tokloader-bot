@@ -23,7 +23,8 @@ func TestRouter_TikTok(t *testing.T) {
 	tt := &stubResolver{media: &downloader.MediaResponse{VideoURL: "https://cdn.example.com/v.mp4"}}
 	ig := &stubResolver{}
 	fb := &stubResolver{}
-	r := downloader.NewRouterWithResolvers(tt, ig, fb)
+	yt := &stubResolver{}
+	r := downloader.NewRouterWithResolvers(tt, ig, fb, yt)
 
 	_, err := r.Resolve(context.Background(), "https://www.tiktok.com/@user/video/1")
 	if err != nil {
@@ -32,14 +33,14 @@ func TestRouter_TikTok(t *testing.T) {
 	if !tt.called {
 		t.Error("expected tiktok resolver to be called")
 	}
-	if ig.called || fb.called {
+	if ig.called || fb.called || yt.called {
 		t.Error("only tiktok resolver should be called")
 	}
 }
 
 func TestRouter_ShortTikTok(t *testing.T) {
 	tt := &stubResolver{media: &downloader.MediaResponse{VideoURL: "https://cdn.example.com/v.mp4"}}
-	r := downloader.NewRouterWithResolvers(tt, &stubResolver{}, &stubResolver{})
+	r := downloader.NewRouterWithResolvers(tt, &stubResolver{}, &stubResolver{}, &stubResolver{})
 
 	_, err := r.Resolve(context.Background(), "https://vt.tiktok.com/abcdef/")
 	if err != nil {
@@ -52,7 +53,7 @@ func TestRouter_ShortTikTok(t *testing.T) {
 
 func TestRouter_Instagram(t *testing.T) {
 	ig := &stubResolver{media: &downloader.MediaResponse{VideoURL: "https://cdn.example.com/v.mp4"}}
-	r := downloader.NewRouterWithResolvers(&stubResolver{}, ig, &stubResolver{})
+	r := downloader.NewRouterWithResolvers(&stubResolver{}, ig, &stubResolver{}, &stubResolver{})
 
 	_, err := r.Resolve(context.Background(), "https://www.instagram.com/reel/abc123/")
 	if err != nil {
@@ -65,7 +66,7 @@ func TestRouter_Instagram(t *testing.T) {
 
 func TestRouter_Facebook(t *testing.T) {
 	fb := &stubResolver{media: &downloader.MediaResponse{VideoURL: "https://cdn.example.com/v.mp4"}}
-	r := downloader.NewRouterWithResolvers(&stubResolver{}, &stubResolver{}, fb)
+	r := downloader.NewRouterWithResolvers(&stubResolver{}, &stubResolver{}, fb, &stubResolver{})
 
 	_, err := r.Resolve(context.Background(), "https://www.facebook.com/watch/?v=123456")
 	if err != nil {
@@ -78,7 +79,7 @@ func TestRouter_Facebook(t *testing.T) {
 
 func TestRouter_FbWatch(t *testing.T) {
 	fb := &stubResolver{media: &downloader.MediaResponse{VideoURL: "https://cdn.example.com/v.mp4"}}
-	r := downloader.NewRouterWithResolvers(&stubResolver{}, &stubResolver{}, fb)
+	r := downloader.NewRouterWithResolvers(&stubResolver{}, &stubResolver{}, fb, &stubResolver{})
 
 	_, err := r.Resolve(context.Background(), "https://fb.watch/abcdef/")
 	if err != nil {
@@ -89,17 +90,43 @@ func TestRouter_FbWatch(t *testing.T) {
 	}
 }
 
-func TestRouter_Unsupported(t *testing.T) {
-	r := downloader.NewRouterWithResolvers(&stubResolver{}, &stubResolver{}, &stubResolver{})
+func TestRouter_YouTube(t *testing.T) {
+	yt := &stubResolver{media: &downloader.MediaResponse{VideoURL: "https://cdn.example.com/v.mp4"}}
+	r := downloader.NewRouterWithResolvers(&stubResolver{}, &stubResolver{}, &stubResolver{}, yt)
 
-	_, err := r.Resolve(context.Background(), "https://youtube.com/watch?v=xxx")
+	_, err := r.Resolve(context.Background(), "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !yt.called {
+		t.Error("expected youtube resolver to be called")
+	}
+}
+
+func TestRouter_YouTubeShort(t *testing.T) {
+	yt := &stubResolver{media: &downloader.MediaResponse{VideoURL: "https://cdn.example.com/v.mp4"}}
+	r := downloader.NewRouterWithResolvers(&stubResolver{}, &stubResolver{}, &stubResolver{}, yt)
+
+	_, err := r.Resolve(context.Background(), "https://youtu.be/dQw4w9WgXcQ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !yt.called {
+		t.Error("expected youtube resolver for youtu.be")
+	}
+}
+
+func TestRouter_Unsupported(t *testing.T) {
+	r := downloader.NewRouterWithResolvers(&stubResolver{}, &stubResolver{}, &stubResolver{}, &stubResolver{})
+
+	_, err := r.Resolve(context.Background(), "https://reddit.com/r/videos/abc")
 	if !errors.Is(err, downloader.ErrUnsupportedURL) {
 		t.Errorf("expected ErrUnsupportedURL, got %v", err)
 	}
 }
 
 func TestRouter_InvalidURL(t *testing.T) {
-	r := downloader.NewRouterWithResolvers(&stubResolver{}, &stubResolver{}, &stubResolver{})
+	r := downloader.NewRouterWithResolvers(&stubResolver{}, &stubResolver{}, &stubResolver{}, &stubResolver{})
 
 	_, err := r.Resolve(context.Background(), "not-a-url")
 	if !errors.Is(err, downloader.ErrUnsupportedURL) {

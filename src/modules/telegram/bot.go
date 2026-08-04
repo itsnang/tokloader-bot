@@ -2,6 +2,8 @@ package telegram
 
 import (
 	"context"
+	"os"
+	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
@@ -18,7 +20,8 @@ func NewBot(token string, service downloader.Resolver, cache *Cache) (*Bot, erro
 	if err != nil {
 		return nil, err
 	}
-	handler := NewHandler(api, service, cache)
+	promoteUsername := strings.TrimSpace(os.Getenv("PROMOTE_BOT_USERNAME"))
+	handler := NewHandler(api, service, cache, promoteUsername)
 	return &Bot{api: api, handler: handler}, nil
 }
 
