@@ -21,13 +21,14 @@ type Sender interface {
 }
 
 type Handler struct {
-	sender  Sender
-	service downloader.Resolver
-	cache   *Cache
+	sender          Sender
+	service         downloader.Resolver
+	cache           *Cache
+	promoteUsername string
 }
 
-func NewHandler(sender Sender, service downloader.Resolver, cache *Cache) *Handler {
-	return &Handler{sender: sender, service: service, cache: cache}
+func NewHandler(sender Sender, service downloader.Resolver, cache *Cache, promoteUsername string) *Handler {
+	return &Handler{sender: sender, service: service, cache: cache, promoteUsername: promoteUsername}
 }
 
 func (h *Handler) OnMessage(ctx context.Context, msg *tgbotapi.Message) {
@@ -75,6 +76,15 @@ func (h *Handler) OnMessage(ctx context.Context, msg *tgbotapi.Message) {
 		}
 		h.send(video)
 	}
+
+	h.sendPromotion(msg.Chat.ID)
+}
+
+func (h *Handler) sendPromotion(chatID int64) {
+	if h.promoteUsername == "" {
+		return
+	}
+	h.send(tgbotapi.NewMessage(chatID, fmt.Sprintf("👋 We have a new bot! Switch to @%s for more features.", h.promoteUsername)))
 }
 
 func (h *Handler) OnCallback(ctx context.Context, cb *tgbotapi.CallbackQuery) {
